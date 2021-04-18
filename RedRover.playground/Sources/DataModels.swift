@@ -42,7 +42,24 @@ public struct InputParser {
     }
 }
 
-
+public struct RoverInstructions {
+    
+    public let rover: Rover
+    public let movements: [RoverMovementType]
+    
+    static func create(from locationString: String, movementsString: String) -> RoverInstructions? {
+        let movements = movementsString.compactMap { RoverMovementType(rawValue: "\($0)")}
+        guard
+            let location = RoverLocation.create(from: locationString),
+            movements.count == movementsString.count  else {
+            print(" Invalid Input");
+            return nil
+        }
+        return RoverInstructions(rover: Rover(location: location),
+                             movements: movements)
+    }
+    
+}
 
 public enum RoverOrientation: String, CaseIterable {
     case north = "N"
@@ -149,25 +166,4 @@ public class RoverLocation {
         return "\(position.x)\(position.y)\(orientation.rawValue)"
     }
 }
-
-
-public struct RoverInstructions {
-    
-    public let rover: Rover
-    public let movements: [RoverMovementType]
-    
-    static func create(from locationString: String, movementsString: String) -> RoverInstructions? {
-        let movements = movementsString.compactMap { RoverMovementType(rawValue: "\($0)")}
-        guard
-            let location = RoverLocation.create(from: locationString),
-            movements.count == movementsString.count  else {
-            print(" Invalid Input");
-            return nil
-        }
-        return RoverInstructions(rover: Rover(location: location),
-                             movements: movements)
-    }
-    
-}
-
 
