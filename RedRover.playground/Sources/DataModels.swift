@@ -8,7 +8,7 @@ public typealias GridPosition = (x: Int, y: Int)
 public struct ProgramInput {
     
     public let bounds: GridPosition
-    public let roverMovements: [RoverMovement]
+    public let instructions: [RoverInstructions]
 }
 
 public struct InputParser {
@@ -29,16 +29,16 @@ public struct InputParser {
         }
         
         let bound = GridPosition(x:x, y:y)
-        var movementsArray = [RoverMovement]()
+        var movementsArray = [RoverInstructions]()
         var index = 0
         while index < stringArray.count {
-            if let movement = RoverMovement.create(from: stringArray[index],
+            if let movement = RoverInstructions.create(from: stringArray[index],
                                                    movementsString: stringArray[index + 1]) {
                 movementsArray.append(movement)
             }
             index += 3
         }
-        return ProgramInput(bounds: bound, roverMovements: movementsArray)
+        return ProgramInput(bounds: bound, instructions: movementsArray)
     }
 }
 
@@ -94,22 +94,34 @@ public class Rover {
     
     public var location: RoverLocation
     public var lost: Bool
+    public var locationString: String {
+        return "\(location.position.x) \(location.position.y) \(location.orientation.rawValue) \(lost ? "LOST" : "")"
+    }
     
     public init(location: RoverLocation, lost: Bool = false) {
         self.location = location
         self.lost = lost
     }
     
-    func apply(movementType: RoverMovementType, bounds: GridPosition) {
+    public func apply(movementType: RoverMovementType,
+                      bounds: GridPosition,
+                      avoid: inout [String: [RoverMovementType]]) {
+        
+        guard !(avoid[self.location.toString()]?.contains(movementType) ?? false)   else { return }
+        // ^^ Ignore as a previous rover has disappeared with this combination
+                
         let orientation = location.orientation.applyDirection(movement: movementType)
-        let location = orientation.applyMovement(position: self.location.position, movement: movementType)
+        let location = orientation.applyMovement(position: self.location.position,
+                                                 movement: movementType)
         if (0...bounds.x ~= location.x) && (0...bounds.y ~= location.y) {
             self.location = RoverLocation(position: location, orientation: orientation)
         } else {
             self.lost = true
+            var movementsToAvoid = avoid[self.location.toString()] ?? []
+            movementsToAvoid.append(movementType)
+            avoid[self.location.toString()] = movementsToAvoid
         }
     }
-    
     
 }
 
@@ -133,15 +145,18 @@ public class RoverLocation {
         self.orientation = orientation
     }
     
+    public func toString() -> String {
+        return "\(position.x)\(position.y)\(orientation.rawValue)"
+    }
 }
 
 
-public struct RoverMovement {
+public struct RoverInstructions {
     
     public let rover: Rover
-    public let movement: [RoverMovementType]
+    public let movements: [RoverMovementType]
     
-    static func create(from locationString: String, movementsString: String) -> RoverMovement? {
+    static func create(from locationString: String, movementsString: String) -> RoverInstructions? {
         let movements = movementsString.compactMap { RoverMovementType(rawValue: "\($0)")}
         guard
             let location = RoverLocation.create(from: locationString),
@@ -149,8 +164,8 @@ public struct RoverMovement {
             print(" Invalid Input");
             return nil
         }
-        return RoverMovement(rover: Rover(location: location),
-                             movement: movements)
+        return RoverInstructions(rover: Rover(location: location),
+                             movements: movements)
     }
     
 }
