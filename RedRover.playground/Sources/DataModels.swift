@@ -33,7 +33,7 @@ public struct InputParser {
         var index = 0
         while index < stringArray.count {
             if let movement = RoverMovement.create(from: stringArray[index],
-                                                    movementsString: stringArray[index + 1]) {
+                                                   movementsString: stringArray[index + 1]) {
                 movementsArray.append(movement)
             }
             index += 3
@@ -49,6 +49,39 @@ public enum RoverOrientation: String, CaseIterable {
     case south = "S"
     case east = "E"
     case west = "W"
+    
+    func applyDirection(movement: RoverMovementType) -> RoverOrientation {
+        switch movement {
+        case .right:
+            switch self {
+            case .north: return .east
+            case .south: return .west
+            case .east: return .south
+            case .west: return .north
+            }
+        case .left:
+            switch self {
+            case .north: return .west
+            case .south: return .east
+            case .east: return .north
+            case .west: return .south
+            }
+        default: return self
+        }
+    }
+    
+    func applyMovement(position: GridPosition, movement: RoverMovementType) -> GridPosition {
+        switch movement {
+        case .forward:
+            switch self {
+            case .north: return GridPosition(x: position.x, y: position.y + 1)
+            case .south: return GridPosition(x: position.x, y: position.y - 1)
+            case .east: return GridPosition(x: position.x + 1, y: position.y)
+            case .west: return GridPosition(x: position.x - 1, y: position.y)
+            }
+        default: return position
+        }
+    }
 }
 
 public enum RoverMovementType: String, CaseIterable {
@@ -56,7 +89,30 @@ public enum RoverMovementType: String, CaseIterable {
     case right = "R"
     case forward = "F"
 }
- 
+
+public class Rover {
+    
+    public var location: RoverLocation
+    public var lost: Bool
+    
+    public init(location: RoverLocation, lost: Bool = false) {
+        self.location = location
+        self.lost = lost
+    }
+    
+    func apply(movementType: RoverMovementType, bounds: GridPosition) {
+        let orientation = location.orientation.applyDirection(movement: movementType)
+        let location = orientation.applyMovement(position: self.location.position, movement: movementType)
+        if (0...bounds.x ~= location.x) && (0...bounds.y ~= location.y) {
+            self.location = RoverLocation(position: location, orientation: orientation)
+        } else {
+            self.lost = true
+        }
+    }
+    
+    
+}
+
 public class RoverLocation {
     
     public var position: GridPosition
@@ -81,7 +137,8 @@ public class RoverLocation {
 
 
 public struct RoverMovement {
-    public let location: RoverLocation
+    
+    public let rover: Rover
     public let movement: [RoverMovementType]
     
     static func create(from locationString: String, movementsString: String) -> RoverMovement? {
@@ -92,9 +149,10 @@ public struct RoverMovement {
             print(" Invalid Input");
             return nil
         }
-        return RoverMovement(location: location, movement: movements)
-            
+        return RoverMovement(rover: Rover(location: location),
+                             movement: movements)
     }
+    
 }
 
 
