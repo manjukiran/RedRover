@@ -1,5 +1,11 @@
+//
+//  CommandCentre.swift
+//  RedRover
+//
+//  Created by Manju Kiran on 20/04/2021.
+//
+
 import Foundation
-import XCTest
 
 class RedRoverCommandCentre {
 
@@ -47,6 +53,3 @@ class RedRoverCommandCentre {
     }
 }
 
-
-let commandCentre = RedRoverCommandCentre(input: InputParser.parse(InputSet.input2))
-print(commandCentre.executeMovements())

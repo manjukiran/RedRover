@@ -23,6 +23,7 @@ public struct InputParser {
             print(" Invalid Input"); return nil
         }
         stringArray.remove(at: 0)
+        stringArray = stringArray.filter { !$0.isEmpty }
         guard stringArray.count % 2 == 0 else { // 2 lines per robot
             print(" Invalid Input") ;
             return nil
@@ -36,7 +37,7 @@ public struct InputParser {
                                                    movementsString: stringArray[index + 1]) {
                 movementsArray.append(movement)
             }
-            index += 3
+            index += 2
         }
         return ProgramInput(bounds: bound, instructions: movementsArray)
     }
@@ -121,23 +122,16 @@ public class Rover {
     }
     
     public func apply(movementType: RoverMovementType,
-                      bounds: GridPosition,
-                      avoid: inout [String: [RoverMovementType]]) {
+                      avoid: [String: [RoverMovementType]]) -> RoverLocation {
         
-        guard !(avoid[self.location.toString()]?.contains(movementType) ?? false)   else { return }
+        guard !(avoid[self.location.toString()]?.contains(movementType) ?? false) else { return self.location
+        }
         // ^^ Ignore as a previous rover has disappeared with this combination
                 
         let orientation = location.orientation.applyDirection(movement: movementType)
         let location = orientation.applyMovement(position: self.location.position,
                                                  movement: movementType)
-        if (0...bounds.x ~= location.x) && (0...bounds.y ~= location.y) {
-            self.location = RoverLocation(position: location, orientation: orientation)
-        } else {
-            self.lost = true
-            var movementsToAvoid = avoid[self.location.toString()] ?? []
-            movementsToAvoid.append(movementType)
-            avoid[self.location.toString()] = movementsToAvoid
-        }
+        return RoverLocation(position: location, orientation: orientation)
     }
     
 }
